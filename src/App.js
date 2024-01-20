@@ -63,6 +63,27 @@ function App() {
   const getOwnedWidgets = async () => {
     try {
       // insert code here
+      const suiClient = new SuiClient({ url: getFullnodeUrl("devnet") });
+      const objects = await suiClient.getOwnedObjects({ owner: accountAddress });
+      const widgets = [];
+
+      // iterate through all objects owned by address
+      for (let i = 0; i < objects.data.length; i++) {
+        const currentObjectId = objects.data[i].data.objectId;
+
+        // get object information
+        const objectInfo = await suiClient.getObject({
+          id: currentObjectId,
+          options: { showContent: true },
+        });
+
+        if (objectInfo.data.content.type == `${packageId}::widget::Widget`) {
+          const widgetObjectId = objectInfo.data.content.fields.id.id;
+          console.log("widget spotted:", widgetObjectId);
+          widgets.push(widgetObjectId);
+        }
+      }
+      setOwnedWidgets(widgets);
 
       toast.success(`Successfully refreshed owned widgets!`, {
         position: toast.POSITION.TOP_LEFT,
@@ -90,6 +111,42 @@ function App() {
   const getListingInformation = async () => {
     try {
       // insert code here
+      const suiClient = new SuiClient({ url: getFullnodeUrl("devnet") });
+
+      // get marketplace ID
+      const marketplaceObject = await suiClient.getObject({
+        id: marketplaceId,
+        options: { showContent: true },
+      });
+      const marketplaceItemsId = marketplaceObject.data.content.fields.items.fields.id.id;
+
+      // get marketplace items ID
+      const marketplaceItems = await suiClient.getDynamicFields({ parentId: marketplaceItemsId });
+
+      const listingIds = [];
+      // get listing IDs - loop through and save IDs
+      for (let i = 0; i < marketplaceItems.data.length; i++) {
+        listingIds.push(marketplaceItems.data[i].objectId);
+      }
+
+      const output = [];
+      // iterate through all listings and populate output array
+      for (let i = 0; i < listingIds.length; i++) {
+        const currentListing = [];
+        const listingObject = await suiClient.getObject({
+          id: listingIds[i],
+          options: { showContent: true },
+        });
+
+        // save relevant info into an array for displaying on frontend
+        currentListing.push(`listingId: ${listingIds[i]}`);
+        currentListing.push(`askPrice: ${listingObject.data.content.fields.value.fields.ask}`);
+        currentListing.push(`owner: ${listingObject.data.content.fields.value.fields.owner}`);
+        currentListing.push(`widget: ${listingObject.data.content.fields.name}`);
+        output.push(currentListing);
+      }
+
+      setListingInfo(output);
 
       toast.success(`Successfully refreshed listings!`, {
         position: toast.POSITION.TOP_LEFT,
@@ -116,7 +173,7 @@ function App() {
         <div>
           <div class="header">
             <div class="column header-left title">MarketplaceId: {marketplaceId}</div>
-            <div class="header-right">{/* insert code here */}</div>
+            <div class="header-right"><ConnectButton></ConnectButton></div>
           </div>
           <div class="row" id="second-row">
             <div class="column">
@@ -222,8 +279,9 @@ function App() {
             </div>
           </div>
         </div>
-      )}
-    </WalletKitProvider>
+      )
+      }
+    </WalletKitProvider >
   );
 }
 

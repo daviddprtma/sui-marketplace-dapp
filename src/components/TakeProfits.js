@@ -9,6 +9,20 @@ function TakeProfits({ packageId, marketplaceId }) {
   const takeProfits = async () => {
     try {
       // insert code here
+      const txb = new TransactionBlock();
+      txb.moveCall({
+        target: `${packageId}::marketplace::take_profits_and_keep`,
+        typeArguments: ["0x2::sui::SUI"],
+        arguments: [txb.object(marketplaceId)],
+      });
+
+      // sign and execute transaction block with wallet
+      const output = await signAndExecuteTransactionBlock({
+        transactionBlock: txb,
+        options: { showEffects: true },
+      });
+
+      console.log("output:", output);
 
       toast.success(`Successfully took profits!`, {
         position: toast.POSITION.TOP_LEFT,

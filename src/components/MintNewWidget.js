@@ -15,6 +15,18 @@ function MintNewWidget({ setAccountAddress, packageId, afterMintingWidget }) {
   const mintNewWidget = async () => {
     try {
       // insert code here
+      const txb = new TransactionBlock();
+      txb.moveCall({
+        target: `${packageId}::widget::mint`,
+      });
+
+      // sign and execute transaction block with wallet
+      const output = await signAndExecuteTransactionBlock({
+        transactionBlock: txb,
+        options: { showEffects: true },
+      });
+
+      console.log("output from minting widget:", output);
 
       if (afterMintingWidget) {
         await afterMintingWidget();

@@ -9,6 +9,24 @@ function PurchaseListing({ itemToPurchase, amountSent, packageId, marketplaceId,
   const purchaseListing = async () => {
     try {
       // insert code here
+      // prepare transaction block, split coin
+      const txb = new TransactionBlock();
+      const [coin] = txb.splitCoins(txb.gas, [txb.pure(amountSent)]);
+
+      // prepare transaction block
+      txb.moveCall({
+        target: `${packageId}::marketplace::buy_and_take`,
+        typeArguments: [`${packageId}::widget::Widget`, "0x2::sui::SUI"],
+        arguments: [txb.object(marketplaceId), txb.pure(itemToPurchase), coin],
+      });
+
+      // sign and execute transaction block with wallet
+      const output = await signAndExecuteTransactionBlock({
+        transactionBlock: txb,
+        options: { showEffects: true },
+      });
+
+      console.log("output:", output);
 
       if (afterPurchase) {
         await afterPurchase();
